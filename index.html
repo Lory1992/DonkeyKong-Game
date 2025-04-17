@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gioco Ostacoli con Salto</title>
+    <style>
+        canvas {
+            border: 2px solid black;
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="1200" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const player = {
+            x: 50,
+            y: 300,
+            width: 40,
+            height: 80,
+            color: 'green',
+            speed: 5,
+            dx: 0,
+            dy: 0,
+            gravity: 0.8,
+            jumpPower: -15,
+            grounded: true
+        };
+
+        const obstacles = [
+            { x: 300, y: 320, width: 50, height: 50 },
+            { x: 600, y: 320, width: 50, height: 50 },
+            { x: 900, y: 320, width: 50, height: 50 }
+        ];
+
+        const finishLine = { x: 1150, y: 300, width: 20, height: 100 };
+
+        let gameRunning = true;
+
+        function drawPlayer() {
+            // Corpo
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // Testa
+            ctx.beginPath();
+            ctx.arc(player.x + player.width / 2, player.y - 20, 20, 0, Math.PI * 2);
+            ctx.fillStyle = 'green';
+            ctx.fill();
+
+            // Braccia
+            ctx.fillRect(player.x - 10, player.y + 20, 10, 30); // Sinistra
+            ctx.fillRect(player.x + player.width, player.y + 20, 10, 30); // Destra
+
+            // Gambe con piedi
+            ctx.fillRect(player.x, player.y + player.height, 10, 30); // Gamba sinistra
+            ctx.fillRect(player.x + player.width - 10, player.y + player.height, 10, 30); // Gamba destra
+            ctx.fillStyle = 'black';
+            ctx.fillRect(player.x, player.y + player.height + 30, 10, 10); // Piede sinistro
+            ctx.fillRect(player.x + player.width - 10, player.y + player.height + 30, 10, 10); // Piede destro
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = 'red';
+            obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+        }
+
+        function drawFinishLine() {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(finishLine.x, finishLine.y, finishLine.width, finishLine.height);
+        }
+
+        function checkCollision() {
+            for (const obstacle of obstacles) {
+                if (
+                    player.x < obstacle.x + obstacle.width &&
+                    player.x + player.width > obstacle.x &&
+                    player.y < obstacle.y + obstacle.height &&
+                    player.y + player.height > obstacle.y
+                ) {
+                    return 'Game Over';
+                }
+            }
+            if (
+                player.x < finishLine.x + finishLine.width &&
+                player.x + player.width > finishLine.x &&
+                player.y < finishLine.y + finishLine.height &&
+                player.y + player.height > finishLine.y
+            ) {
+                return 'Hai vinto';
+            }
+            return null;
+        }
+
+        function restartGame(message) {
+            alert(message);
+            player.x = 50;
+            player.y = 300;
+            player.dx = 0;
+            player.dy = 0;
+            player.grounded = true;
+        }
+
+        function update() {
+            if (gameRunning) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Gravità
+                if (!player.grounded) {
+                    player.dy += player.gravity;
+                } else {
+                    player.dy = 0;
+                }
+
+                player.y += player.dy;
+                if (player.y + player.height >= 380) {
+                    player.y = 300;
+                    player.grounded = true;
+                }
+
+                player.x += player.dx;
+
+                const result = checkCollision();
+                if (result) {
+                    gameRunning = false;
+                    restartGame(result);
+                    gameRunning = true;
+                }
+
+                drawPlayer();
+                drawObstacles();
+                drawFinishLine();
+
+                requestAnimationFrame(update);
+            }
+        }
+
+        function jump() {
+            if (player.grounded) {
+                player.dy = player.jumpPower;
+                player.grounded = false;
+            }
+        }
+
+        function moveRight() {
+            player.dx = player.speed;
+        }
+
+        function moveLeft() {
+            player.dx = -player.speed;
+        }
+
+        function stopPlayer() {
+            player.dx = 0;
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') moveRight();
+            if (e.key === 'ArrowLeft') moveLeft();
+            if (e.key === ' ') jump(); // Barra spaziatrice per saltare
+        });
+
+        document.addEventListener('keyup', () => stopPlayer());
+
+        update();
+    </script>
+</body>
+</html>
+
